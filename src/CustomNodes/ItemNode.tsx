@@ -1,24 +1,20 @@
 import { memo, useState } from 'react'
-import { Handle, Position, useReactFlow } from '@xyflow/react'
+import { Handle, Position } from '@xyflow/react'
 import { IconComponent, SpecType } from '../helpers'
 import { Grid } from '@mui/material'
 import { ItemType } from '../helpers'
-import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
 import styled from 'styled-components'
 const ItemNode = (item: any) => {
   const [isSelected, setIsSelected] = useState(false)
-  const { deleteElements } = useReactFlow()
+
   const { label, type, description, specType } = item.data
 
   const onClick = () => {
     setIsSelected(!isSelected)
   }
 
-  const onDelete = () => {
-    const id = item.id
-    deleteElements({ nodes: [{ id }] })
-  }
+
 
   return (
     <div style={{ width: '200px' }} onClick={onClick}>
@@ -37,13 +33,6 @@ const ItemNode = (item: any) => {
                 {description}
               </Grid>
             </Paper>
-          </Grid>
-        )}
-        {isSelected && (
-          <Grid size={12}>
-            <Button variant="contained" onClick={onDelete}>
-              Удалить
-            </Button>
           </Grid>
         )}
       </Grid>

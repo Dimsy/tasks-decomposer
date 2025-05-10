@@ -1,5 +1,6 @@
 import { Grid } from '@mui/material'
 import React, { useEffect } from 'react'
+import { useReactFlow } from '@xyflow/react'
 import styled from 'styled-components'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
@@ -35,13 +36,29 @@ const MenuProps = {
 
 interface IControlProps {
   onAdd: (node: any) => void
+  selectedNode: any
+  onUpdateNode: any
+  setSelectedNode: (node: any) => void
 }
 
-export const Controls = ({ onAdd }: IControlProps) => {
+export const Controls = ({ onAdd, selectedNode, onUpdateNode, setSelectedNode }: IControlProps) => {
+  const { deleteElements } = useReactFlow()
   const [type, setType] = React.useState(ItemType.TASK)
   const [specType, setSpecType] = React.useState('')
   const [title, setTitle] = React.useState('')
   const [description, setDescription] = React.useState('')
+
+  useEffect(() => {
+    if (!!selectedNode) {
+      const { type, label, description, specType } = selectedNode.data
+      setTitle(label)
+      setDescription(description)
+      setType(type)
+      setSpecType(specType)
+    } else {
+      onClearForm();
+    }
+  }, [selectedNode])
 
   const handleChange = (event: SelectChangeEvent) => {
     setType(event.target.value)
@@ -56,9 +73,31 @@ export const Controls = ({ onAdd }: IControlProps) => {
     setDescription(event.target.value)
   }
 
-  // Ожидаю что эта хуйня очистит инпут тайтла
   const onClearForm = () => {
     setTitle('')
+    setDescription('')
+    setType(ItemType.TASK)
+    setSpecType('')
+  }
+
+  const onDelete = () => {
+    const id = selectedNode.id
+    deleteElements({ nodes: [{ id }] })
+    onClearForm()
+    setSelectedNode(null)
+  }
+
+  const onSaveAdd = () => {
+    if (!selectedNode) {
+      onAdd({
+        id: uuidv4(),
+        data: { label: title, description, type, specType },
+        style: getStyleByType(specType),
+      })
+    } else {
+      onUpdateNode(selectedNode.id, { label: title, description, type, specType }, getStyleByType(specType))
+    }
+    onClearForm()
   }
 
   return (
@@ -100,17 +139,17 @@ export const Controls = ({ onAdd }: IControlProps) => {
           </Grid>
           <Grid size={9}>
             <Box component="form" noValidate autoComplete="off">
-              <TextField fullWidth label="Название" id="titleInput" size="small" focused onChange={handleTitleChange} />
+              <TextField fullWidth label="Название" id="titleInput" size="small" focused value={title} onChange={handleTitleChange} />
             </Box>
           </Grid>
           <Grid size={12}>
             <Box component="form" noValidate autoComplete="off">
-              <TextField fullWidth id="outlined-multiline-static" label="Описание" multiline rows={2} focused onChange={handleDescriptionChange} />
+              <TextField fullWidth id="outlined-multiline-static" label="Описание" multiline rows={2} focused value={description} onChange={handleDescriptionChange} />
             </Box>
           </Grid>
-          <Grid container size={12} justifyContent="flex-end">
-            {type === ItemType.TASK && (
-              <Grid size={3}>
+          <Grid container size={12} alignContent={'space-between'}>
+            <Grid size={7}>
+              {type === ItemType.TASK && (
                 <FormControl size="small" sx={{ width: '150px' }}>
                   <InputLabel id="demo-select-small-label" focused>
                     Специализация
@@ -138,23 +177,22 @@ export const Controls = ({ onAdd }: IControlProps) => {
                     </MenuItem>
                   </Select>
                 </FormControl>
+              )}
+            </Grid>
+
+            <Grid container size={5} justifyContent={'end'}>
+              {!!selectedNode && (
+                <Grid alignItems={'flex-start'}>
+                  <Button variant="contained" color="error" onClick={onDelete}>
+                    Удалить
+                  </Button>
+                </Grid>
+              )}
+              <Grid>
+                <Button variant="contained" onClick={onSaveAdd}>
+                  {!!selectedNode ? 'Сохранить' : 'Добавить'}
+                </Button>
               </Grid>
-            )}
-            <Grid>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  onAdd({
-                    id: uuidv4(),
-                    data: { label: title, description, type, specType },
-                    style: getStyleByType(specType),
-                  })
-                  // Тут вызываем и пытаемся чистить
-                  onClearForm();
-                }}
-              >
-                Добавить
-              </Button>
             </Grid>
           </Grid>
         </Grid>
